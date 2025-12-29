@@ -14,16 +14,198 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      classifications: {
+        Row: {
+          classified_at: string
+          confidence: number | null
+          id: string
+          intent: Database["public"]["Enums"]["message_intent"]
+          message_id: string
+          priority: Database["public"]["Enums"]["message_priority"]
+          suggested_reply: string | null
+        }
+        Insert: {
+          classified_at?: string
+          confidence?: number | null
+          id?: string
+          intent: Database["public"]["Enums"]["message_intent"]
+          message_id: string
+          priority: Database["public"]["Enums"]["message_priority"]
+          suggested_reply?: string | null
+        }
+        Update: {
+          classified_at?: string
+          confidence?: number | null
+          id?: string
+          intent?: Database["public"]["Enums"]["message_intent"]
+          message_id?: string
+          priority?: Database["public"]["Enums"]["message_priority"]
+          suggested_reply?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          instagram_message_id: string | null
+          is_read: boolean | null
+          received_at: string
+          sender_avatar_url: string | null
+          sender_followers_count: number | null
+          sender_instagram_id: string
+          sender_name: string | null
+          sender_username: string | null
+          workspace_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          instagram_message_id?: string | null
+          is_read?: boolean | null
+          received_at?: string
+          sender_avatar_url?: string | null
+          sender_followers_count?: number | null
+          sender_instagram_id: string
+          sender_name?: string | null
+          sender_username?: string | null
+          workspace_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          instagram_message_id?: string | null
+          is_read?: boolean | null
+          received_at?: string
+          sender_avatar_url?: string | null
+          sender_followers_count?: number | null
+          sender_instagram_id?: string
+          sender_name?: string | null
+          sender_username?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          instagram_access_token: string | null
+          instagram_id: string | null
+          instagram_username: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          instagram_access_token?: string | null
+          instagram_id?: string | null
+          instagram_username?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          instagram_access_token?: string | null
+          instagram_id?: string | null
+          instagram_username?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          instagram_page_id: string | null
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instagram_page_id?: string | null
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instagram_page_id?: string | null
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      message_intent: "partnership" | "fan" | "question" | "hate" | "spam"
+      message_priority: "respond_now" | "can_wait" | "ignore"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +332,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      message_intent: ["partnership", "fan", "question", "hate", "spam"],
+      message_priority: ["respond_now", "can_wait", "ignore"],
+    },
   },
 } as const
