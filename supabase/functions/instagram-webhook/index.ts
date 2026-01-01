@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const INSTAGRAM_VERIFY_TOKEN = Deno.env.get('INSTAGRAM_VERIFY_TOKEN') || 'lovable_dm_verify_2024';
+const INSTAGRAM_VERIFY_TOKEN = Deno.env.get('IG_VERIFY_TOKEN')!;
 
 serve(async (req) => {
   // Handle webhook verification (GET request from Meta)
