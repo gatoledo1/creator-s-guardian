@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Menu, Filter } from 'lucide-react';
+import { Search, Menu, Instagram, Loader2 } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MessageCard } from './MessageCard';
@@ -12,10 +13,13 @@ import { mockMessages } from '@/data/mockMessages';
 import { Message, MessageIntent } from '@/types/message';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 type FilterType = MessageIntent | 'all' | 'opportunities';
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  const { isConnected, loading: workspaceLoading } = useWorkspace();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,6 +64,47 @@ export function Dashboard() {
     avgResponseTime: '2.4h',
   }), []);
 
+  // Loading state
+  if (workspaceLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Not connected - show connect prompt
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <Instagram className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Conecte seu Instagram
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            Para começar a receber e classificar suas DMs automaticamente, conecte sua conta profissional do Instagram.
+          </p>
+          <Button
+            onClick={() => navigate('/connect-instagram')}
+            size="lg"
+            className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white"
+          >
+            <Instagram className="w-5 h-5 mr-2" />
+            Conectar Instagram
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Mobile Layout
   const filterLabels: Record<FilterType, string> = {
     all: 'Todas',
     opportunities: 'Oportunidades',
@@ -69,8 +114,6 @@ export function Dashboard() {
     hate: 'Hate',
     spam: 'Spam',
   };
-
-  // Mobile Layout
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
