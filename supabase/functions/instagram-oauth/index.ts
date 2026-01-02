@@ -38,13 +38,17 @@ serve(async (req) => {
         });
       }
 
+      // Instagram Messaging API uses Facebook Login (Graph API permissions)
       const scopes = [
-        'instagram_business_basic',
-        'instagram_business_manage_messages',
-        'instagram_business_manage_comments',
+        'instagram_basic',
+        'instagram_manage_messages',
+        'instagram_manage_comments',
+        'pages_show_list',
+        'pages_read_engagement',
       ].join(',');
 
-      const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scopes}`;
+      // Use Facebook OAuth dialog (not instagram.com) to avoid redirect_uri mismatch
+      const authUrl = `https://www.facebook.com/dialog/oauth?client_id=${INSTAGRAM_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}`;
 
       console.log('Generated OAuth URL for redirect:', redirectUri);
 
@@ -65,48 +69,77 @@ serve(async (req) => {
         });
       }
 
-      console.log('Exchanging code for token...');
+      console.log('Exchanging code for token (Facebook OAuth)...');
 
-      // Exchange code for short-lived token
-      const tokenResponse = await fetch('https://api.instagram.com/oauth/access_token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: INSTAGRAM_APP_ID,
-          client_secret: INSTAGRAM_APP_SECRET,
-          grant_type: 'authorization_code',
-          redirect_uri,
-          code,
-        }),
-      });
+      // 1) Exchange code for a short-lived user access token
+      const tokenUrl = new URL('https://graph.facebook.com/oauth/access_token');
+      tokenUrl.search = new URLSearchParams({
+        client_id: INSTAGRAM_APP_ID,
+        client_secret: INSTAGRAM_APP_SECRET,
+        redirect_uri,
+        code,
+      }).toString();
 
+      const tokenResponse = await fetch(tokenUrl.toString());
       const tokenData = await tokenResponse.json();
-      console.log('Token exchange response:', JSON.stringify(tokenData));
 
-      if (tokenData.error) {
-        return new Response(JSON.stringify({ error: tokenData.error_message || tokenData.error }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      if (!tokenResponse.ok || tokenData?.error) {
+        console.error('Token exchange error:', tokenData?.error || tokenData);
+        return new Response(
+          JSON.stringify({ error: tokenData?.error?.message || 'Falha ao trocar o código por token' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      const { access_token: shortToken, user_id: igUserId } = tokenData;
+      const shortUserToken: string = tokenData.access_token;
 
-      // Exchange for long-lived token
-      const longTokenResponse = await fetch(
-        `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${shortToken}`
-      );
+      // 2) Exchange for a long-lived user access token
+      const longTokenUrl = new URL('https://graph.facebook.com/oauth/access_token');
+      longTokenUrl.search = new URLSearchParams({
+        grant_type: 'fb_exchange_token',
+        client_id: INSTAGRAM_APP_ID,
+        client_secret: INSTAGRAM_APP_SECRET,
+        fb_exchange_token: shortUserToken,
+      }).toString();
+
+      const longTokenResponse = await fetch(longTokenUrl.toString());
       const longTokenData = await longTokenResponse.json();
-      console.log('Long-lived token response:', JSON.stringify(longTokenData));
 
-      const longLivedToken = longTokenData.access_token || shortToken;
+      const userAccessToken: string = (longTokenResponse.ok && longTokenData?.access_token)
+        ? longTokenData.access_token
+        : shortUserToken;
 
-      // Get user profile
-      const profileResponse = await fetch(
-        `https://graph.instagram.com/me?fields=id,username&access_token=${longLivedToken}`
+      // 3) Find a connected Facebook Page that has an Instagram Business account
+      const pagesResponse = await fetch(
+        `https://graph.facebook.com/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=${encodeURIComponent(userAccessToken)}`
       );
-      const profileData = await profileResponse.json();
-      console.log('Profile data:', JSON.stringify(profileData));
+      const pagesData = await pagesResponse.json();
+
+      if (!pagesResponse.ok || pagesData?.error) {
+        console.error('Pages fetch error:', pagesData?.error || pagesData);
+        return new Response(
+          JSON.stringify({ error: pagesData?.error?.message || 'Não foi possível listar suas páginas do Facebook' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const pageWithIg = (pagesData.data || []).find((p: any) => p?.instagram_business_account?.id);
+      if (!pageWithIg) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Nenhuma Página do Facebook com Instagram profissional vinculado foi encontrada. Vincule sua conta profissional a uma Página e tente novamente.',
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const pageId: string = pageWithIg.id;
+      const pageAccessToken: string = pageWithIg.access_token;
+      const igBusinessId: string = pageWithIg.instagram_business_account.id;
+      const igUsername: string = pageWithIg.instagram_business_account.username;
+
+      console.log('Instagram business connected:', { pageId, igBusinessId, igUsername });
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -114,9 +147,10 @@ serve(async (req) => {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          instagram_id: igUserId,
-          instagram_username: profileData.username,
-          instagram_access_token: longLivedToken,
+          instagram_id: igBusinessId,
+          instagram_username: igUsername,
+          // Store Page access token (required for messaging + Graph API calls)
+          instagram_access_token: pageAccessToken,
         })
         .eq('user_id', user_id);
 
@@ -138,15 +172,16 @@ serve(async (req) => {
       if (existingWorkspace) {
         await supabase
           .from('workspaces')
-          .update({ instagram_page_id: igUserId })
+          // Webhook entry.id is the Facebook Page ID
+          .update({ instagram_page_id: pageId, name: `@${igUsername}` })
           .eq('id', existingWorkspace.id);
       } else {
         await supabase
           .from('workspaces')
           .insert({
             owner_id: user_id,
-            name: `@${profileData.username}`,
-            instagram_page_id: igUserId,
+            name: `@${igUsername}`,
+            instagram_page_id: pageId,
           });
       }
 
@@ -154,7 +189,7 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({ 
         success: true,
-        username: profileData.username,
+        username: igUsername,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
