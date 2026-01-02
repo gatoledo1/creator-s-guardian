@@ -40,20 +40,9 @@ export default function ConnectInstagram() {
   const exchangeToken = async (authCode: string) => {
     setStatus('loading');
     try {
-      const redirectUri = `${window.location.origin}/connect-instagram`;
+      // Use fixed redirect URI to match Meta Developers configuration
+      const redirectUri = 'https://dmfocus.vercel.app/connect-instagram';
       
-      const { data, error: fnError } = await supabase.functions.invoke('instagram-oauth', {
-        body: {
-          code: authCode,
-          redirect_uri: redirectUri,
-          user_id: user?.id,
-        },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      // Add action param via query string workaround
       const response = await fetch(
         `https://rwjaslzuxsalsspjqaig.supabase.co/functions/v1/instagram-oauth?action=exchange_token`,
         {
@@ -92,7 +81,8 @@ export default function ConnectInstagram() {
   const startOAuth = async () => {
     setStatus('loading');
     try {
-      const redirectUri = `${window.location.origin}/connect-instagram`;
+      // Use fixed redirect URI to match Meta Developers configuration
+      const redirectUri = 'https://dmfocus.vercel.app/connect-instagram';
       
       const response = await fetch(
         `https://rwjaslzuxsalsspjqaig.supabase.co/functions/v1/instagram-oauth?action=get_auth_url&redirect_uri=${encodeURIComponent(redirectUri)}`,
