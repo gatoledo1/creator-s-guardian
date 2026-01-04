@@ -105,30 +105,16 @@ serve(async (req) => {
 
       console.log('Short-lived token obtained for user:', instagramUserId);
 
-      // 2) Exchange for a long-lived access token (60 days)
-      let accessToken = shortLivedToken;
-      
-      try {
-        const longTokenUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${shortLivedToken}`;
-        const longTokenResponse = await fetch(longTokenUrl);
-        const longTokenData = await longTokenResponse.json();
+      // 2) NOTE: The token we get from `api.instagram.com/oauth/access_token` (Instagram Login)
+      // is not compatible with the Basic Display long-lived exchange (`ig_exchange_token`).
+      // Keeping the short-lived token here avoids the “Unsupported request - method type: get” errors.
+      const accessToken = shortLivedToken;
 
-        if (longTokenResponse.ok && longTokenData?.access_token) {
-          accessToken = longTokenData.access_token;
-          console.log('Long-lived token obtained successfully');
-        } else {
-          console.log('Long-lived token exchange failed, using short-lived token:', longTokenData);
-        }
-      } catch (longTokenError) {
-        console.log('Long-lived token exchange error, using short-lived token:', longTokenError);
-      }
+      // 3) Get user profile info
+      console.log('Fetching profile with token (graph.instagram.com/me)...');
 
-      // 3) Get user profile info using the Instagram Graph API
-      // For Instagram API with Instagram Login, we use graph.instagram.com
-      console.log('Fetching profile with token...');
-      
       const profileResponse = await fetch(
-        `https://graph.instagram.com/${instagramUserId}?fields=id,username,account_type,name&access_token=${accessToken}`
+        `https://graph.instagram.com/me?fields=id,username,account_type,name&access_token=${encodeURIComponent(accessToken)}`
       );
       const profileData = await profileResponse.json();
 
