@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Instagram, Loader2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
@@ -10,10 +10,13 @@ import { toast } from "sonner";
 export default function ConnectInstagram() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [connectedUsername, setConnectedUsername] = useState('');
+  
+  // Prevent duplicate token exchanges
+  const exchangeAttempted = useRef(false);
 
   const code = searchParams.get('code');
   const error = searchParams.get('error');
@@ -29,13 +32,18 @@ export default function ConnectInstagram() {
     if (error) {
       setStatus('error');
       setErrorMessage('Acesso negado ou cancelado pelo usuário');
+      // Clear URL params
+      setSearchParams({}, { replace: true });
       return;
     }
 
-    if (code && user) {
+    if (code && user && !exchangeAttempted.current) {
+      exchangeAttempted.current = true;
+      // Clear URL params immediately to prevent re-use
+      setSearchParams({}, { replace: true });
       exchangeToken(code);
     }
-  }, [code, error, user]);
+  }, [code, error, user, setSearchParams]);
 
   const exchangeToken = async (authCode: string) => {
     setStatus('loading');
