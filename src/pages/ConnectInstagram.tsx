@@ -20,6 +20,7 @@ export default function ConnectInstagram() {
 
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const codeLockKey = code ? `ig_oauth_code_attempted:${code}` : null;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -38,12 +39,19 @@ export default function ConnectInstagram() {
     }
 
     if (code && user && !exchangeAttempted.current) {
+      // Extra guard: React/dev remounts or refresh can re-run this flow.
+      if (codeLockKey && sessionStorage.getItem(codeLockKey) === '1') {
+        return;
+      }
+
       exchangeAttempted.current = true;
+      if (codeLockKey) sessionStorage.setItem(codeLockKey, '1');
+
       // Clear URL params immediately to prevent re-use
       setSearchParams({}, { replace: true });
       exchangeToken(code);
     }
-  }, [code, error, user, setSearchParams]);
+  }, [code, error, user, setSearchParams, codeLockKey]);
 
   const exchangeToken = async (authCode: string) => {
     setStatus('loading');
@@ -80,9 +88,29 @@ export default function ConnectInstagram() {
       // Redirect after success
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
       console.error('Token exchange error:', err);
+
+      // If the authorization code was exchanged once already, Instagram will reject it on retry.
+      // In this case, treat as success if the profile is already connected.
+      if (message.toLowerCase().includes('has been used') && user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('instagram_username')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profile?.instagram_username) {
+          setConnectedUsername(profile.instagram_username);
+          setStatus('success');
+          toast.success('Instagram já estava conectado!');
+          setTimeout(() => navigate('/'), 2000);
+          return;
+        }
+      }
+
       setStatus('error');
-      setErrorMessage(err instanceof Error ? err.message : 'Erro desconhecido');
+      setErrorMessage(message);
     }
   };
 

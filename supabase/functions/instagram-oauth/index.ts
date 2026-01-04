@@ -110,11 +110,10 @@ serve(async (req) => {
       // Keeping the short-lived token here avoids the “Unsupported request - method type: get” errors.
       const accessToken = shortLivedToken;
 
-      // 3) Get user profile info
-      console.log('Fetching profile with token (graph.instagram.com/me)...');
+      console.log('Fetching profile with token (graph.instagram.com/v24.0/me)...');
 
       const profileResponse = await fetch(
-        `https://graph.instagram.com/me?fields=id,username,account_type,name&access_token=${encodeURIComponent(accessToken)}`
+        `https://graph.instagram.com/v24.0/me?fields=id,username,account_type,name&access_token=${encodeURIComponent(accessToken)}`
       );
       const profileData = await profileResponse.json();
 
