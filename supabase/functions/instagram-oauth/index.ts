@@ -106,22 +106,34 @@ serve(async (req) => {
       console.log('Short-lived token obtained for user:', instagramUserId);
 
       // 2) Exchange for a long-lived access token (60 days)
-      const longTokenUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${shortLivedToken}`;
+      let accessToken = shortLivedToken;
       
-      const longTokenResponse = await fetch(longTokenUrl);
-      const longTokenData = await longTokenResponse.json();
+      try {
+        const longTokenUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${shortLivedToken}`;
+        const longTokenResponse = await fetch(longTokenUrl);
+        const longTokenData = await longTokenResponse.json();
 
-      const accessToken: string = (longTokenResponse.ok && longTokenData?.access_token)
-        ? longTokenData.access_token
-        : shortLivedToken;
+        if (longTokenResponse.ok && longTokenData?.access_token) {
+          accessToken = longTokenData.access_token;
+          console.log('Long-lived token obtained successfully');
+        } else {
+          console.log('Long-lived token exchange failed, using short-lived token:', longTokenData);
+        }
+      } catch (longTokenError) {
+        console.log('Long-lived token exchange error, using short-lived token:', longTokenError);
+      }
 
-      console.log('Long-lived token obtained:', longTokenResponse.ok);
-
-      // 3) Get user profile info
+      // 3) Get user profile info using the Instagram Graph API
+      // For Instagram API with Instagram Login, we use graph.instagram.com
+      console.log('Fetching profile with token...');
+      
       const profileResponse = await fetch(
-        `https://graph.instagram.com/me?fields=id,username,account_type,name&access_token=${accessToken}`
+        `https://graph.instagram.com/${instagramUserId}?fields=id,username,account_type,name&access_token=${accessToken}`
       );
       const profileData = await profileResponse.json();
+
+      console.log('Profile response status:', profileResponse.status);
+      console.log('Profile data:', JSON.stringify(profileData));
 
       if (!profileResponse.ok || profileData?.error) {
         console.error('Profile fetch error:', profileData?.error || profileData);
