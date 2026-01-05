@@ -46,6 +46,7 @@ serve(async (req) => {
       if (body.object === 'instagram') {
         for (const entry of body.entry || []) {
           const pageId = entry.id;
+          console.log('Processing entry for page:', pageId);
 
           // Find workspace by Instagram page ID
           const { data: workspace } = await supabase
@@ -59,16 +60,34 @@ serve(async (req) => {
             continue;
           }
 
-          for (const messaging of entry.messaging || []) {
-            const senderId = messaging.sender?.id;
-            const messageData = messaging.message;
+          console.log('Found workspace:', workspace.id);
 
-            if (!messageData || !senderId) continue;
+          // Collect events from both messaging (standard) and changes (some event types)
+          const messagingEvents = entry.messaging || [];
+          const changesEvents = entry.changes?.flatMap((c: any) => c.value?.messages || []) || [];
+          const allEvents = [...messagingEvents, ...changesEvents];
 
-            // Skip messages from the page itself (outgoing)
-            if (senderId === pageId) continue;
+          console.log('Events to process:', allEvents.length, 'messaging:', messagingEvents.length, 'changes:', changesEvents.length);
 
-            console.log('Processing message from:', senderId);
+          for (const event of allEvents) {
+            const senderId = event.sender?.id;
+            const messageData = event.message;
+
+            console.log('Event details:', { senderId, hasMessage: !!messageData, pageId });
+
+            if (!messageData || !senderId) {
+              console.log('Skipping: no message data or sender');
+              continue;
+            }
+
+            // Skip messages from the page itself (outgoing messages)
+            // sender.id === pageId means the PAGE sent this message, so we ignore
+            if (senderId === pageId) {
+              console.log('Skipping: outgoing message from page');
+              continue;
+            }
+
+            console.log('Processing incoming message from:', senderId, 'content:', messageData.text?.substring(0, 50));
 
             // Insert the message
             const { data: insertedMsg, error: insertError } = await supabase
@@ -78,7 +97,7 @@ serve(async (req) => {
                 instagram_message_id: messageData.mid,
                 sender_instagram_id: senderId,
                 content: messageData.text || '[Mídia]',
-                received_at: new Date(messaging.timestamp).toISOString(),
+                received_at: new Date(event.timestamp).toISOString(),
               })
               .select()
               .single();
@@ -87,6 +106,8 @@ serve(async (req) => {
               console.error('Message insert error:', insertError);
               continue;
             }
+
+            console.log('Message inserted:', insertedMsg.id);
 
             // Trigger classification asynchronously
             const classifyUrl = `${SUPABASE_URL}/functions/v1/classify-message`;
