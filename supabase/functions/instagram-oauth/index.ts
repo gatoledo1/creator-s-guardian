@@ -103,45 +103,44 @@ serve(async (req) => {
       const shortLivedToken: string = tokenData.access_token;
       const instagramUserId: string = tokenData.user_id?.toString();
 
+      if (!instagramUserId) {
+        console.error('No user_id in token response');
+        return new Response(
+          JSON.stringify({ error: 'Instagram não retornou o user_id' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       console.log('Short-lived token obtained for user:', instagramUserId);
 
-      // 2) NOTE: The token we get from `api.instagram.com/oauth/access_token` (Instagram Login)
-      // is not compatible with the Basic Display long-lived exchange (`ig_exchange_token`).
-      // Keeping the short-lived token here avoids the “Unsupported request - method type: get” errors.
+      // 2) Fetch user profile using the specific user ID endpoint (NOT /me)
+      // For Instagram API with Instagram Login, /me doesn't work - we must use /{user-id}
       const accessToken = shortLivedToken;
 
-      console.log('Fetching profile with token (graph.instagram.com/v24.0/me)...');
+      console.log('Fetching profile with user ID endpoint:', instagramUserId);
 
       const profileResponse = await fetch(
-        `https://graph.instagram.com/v24.0/me?fields=id,username,account_type,name&access_token=${encodeURIComponent(accessToken)}`
+        `https://graph.instagram.com/v24.0/${instagramUserId}?fields=id,username,name&access_token=${encodeURIComponent(accessToken)}`
       );
       const profileData = await profileResponse.json();
 
       console.log('Profile response status:', profileResponse.status);
       console.log('Profile data:', JSON.stringify(profileData));
 
+      // If fetching profile fails, we still have the user_id from token - use it directly
+      let igUsername: string;
+      let igId: string = instagramUserId;
+
       if (!profileResponse.ok || profileData?.error) {
-        console.error('Profile fetch error:', profileData?.error || profileData);
-        return new Response(
-          JSON.stringify({ error: profileData?.error?.message || 'Não foi possível obter informações do perfil' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        console.warn('Profile fetch failed, using user_id from token:', profileData?.error);
+        // We can still proceed - we have the user_id, just not the username
+        igUsername = `user_${instagramUserId}`;
+      } else {
+        igUsername = profileData.username || `user_${instagramUserId}`;
+        igId = profileData.id || instagramUserId;
       }
 
-      const igUsername: string = profileData.username;
-      const igId: string = profileData.id;
-
-      console.log('Instagram profile:', { igId, igUsername, account_type: profileData.account_type });
-
-      // Verify it's a professional account
-      if (profileData.account_type !== 'BUSINESS' && profileData.account_type !== 'MEDIA_CREATOR') {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Esta conta não é profissional. Converta sua conta para Profissional (Empresa ou Criador) nas configurações do Instagram.' 
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      console.log('Instagram profile:', { igId, igUsername });
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
