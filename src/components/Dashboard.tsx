@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Menu, Instagram, Loader2 } from 'lucide-react';
+import { Search, Menu, Instagram, Loader2, MessageCircle } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MessageCard } from './MessageCard';
@@ -9,17 +9,18 @@ import { MessageDetail } from './MessageDetail';
 import { MobileMessageDetail } from './MobileMessageDetail';
 import { StatsHeader } from './StatsHeader';
 import { MobileStatsHeader } from './MobileStatsHeader';
-import { mockMessages } from '@/data/mockMessages';
 import { Message, MessageIntent } from '@/types/message';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useMessages } from '@/hooks/useMessages';
 
 type FilterType = MessageIntent | 'all' | 'opportunities';
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { isConnected, loading: workspaceLoading } = useWorkspace();
+  const { messages, loading: messagesLoading, counts, stats } = useMessages();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,42 +28,25 @@ export function Dashboard() {
   const isMobile = useIsMobile();
 
   const filteredMessages = useMemo(() => {
-    let messages = mockMessages;
+    let filtered = messages;
 
     if (activeFilter === 'opportunities') {
-      messages = messages.filter(m => m.isOpportunity);
+      filtered = filtered.filter(m => m.isOpportunity);
     } else if (activeFilter !== 'all') {
-      messages = messages.filter(m => m.intent === activeFilter);
+      filtered = filtered.filter(m => m.intent === activeFilter);
     }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      messages = messages.filter(m => 
+      filtered = filtered.filter(m => 
         m.content.toLowerCase().includes(query) ||
         m.author.name.toLowerCase().includes(query) ||
         m.author.username.toLowerCase().includes(query)
       );
     }
 
-    return messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [activeFilter, searchQuery]);
-
-  const counts = useMemo(() => ({
-    all: mockMessages.length,
-    opportunities: mockMessages.filter(m => m.isOpportunity).length,
-    partnership: mockMessages.filter(m => m.intent === 'partnership').length,
-    question: mockMessages.filter(m => m.intent === 'question').length,
-    fan: mockMessages.filter(m => m.intent === 'fan').length,
-    hate: mockMessages.filter(m => m.intent === 'hate').length,
-    spam: mockMessages.filter(m => m.intent === 'spam').length,
-  }), []);
-
-  const stats = useMemo(() => ({
-    totalMessages: mockMessages.length,
-    unreadCount: mockMessages.filter(m => !m.isRead).length,
-    opportunityCount: mockMessages.filter(m => m.isOpportunity).length,
-    avgResponseTime: '2.4h',
-  }), []);
+    return filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [messages, activeFilter, searchQuery]);
 
   // Loading state
   if (workspaceLoading) {
