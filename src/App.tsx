@@ -10,6 +10,10 @@ import ConnectInstagram from "./pages/ConnectInstagram";
 import Landing from "./pages/Landing";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
+import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutPending from "./pages/CheckoutPending";
+import CheckoutFailure from "./pages/CheckoutFailure";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +32,10 @@ const App = () => (
             <Route path="/connect-instagram" element={<ConnectInstagram />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfUse />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route path="/checkout/pending" element={<CheckoutPending />} />
+            <Route path="/checkout/failure" element={<CheckoutFailure />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

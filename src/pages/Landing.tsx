@@ -112,7 +112,7 @@ const Landing = () => {
               Pare de perder oportunidades de parceria. Nossa IA classifica, prioriza e sugere respostas para suas mensagens diretas automaticamente.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate('/auth')} className="text-lg px-8">
+              <Button size="lg" onClick={() => navigate('/checkout')} className="text-lg px-8">
                 Começar Agora
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
@@ -306,7 +306,7 @@ const Landing = () => {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full" size="lg" onClick={() => navigate('/auth')}>
+                <Button className="w-full" size="lg" onClick={() => navigate('/checkout')}>
                   Começar 7 Dias Grátis
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -367,7 +367,7 @@ const Landing = () => {
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
                 Junte-se a milhares de creators que já economizam horas por dia com o DM Focus.
               </p>
-              <Button size="lg" onClick={() => navigate('/auth')} className="text-lg px-8">
+              <Button size="lg" onClick={() => navigate('/checkout')} className="text-lg px-8">
                 Começar Agora — É Grátis
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
