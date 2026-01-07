@@ -71,9 +71,8 @@ serve(async (req: Request) => {
         installments: 12, // Allow up to 12 installments for credit cards
       },
       statement_descriptor: "DMFOCUS",
-      expires: true,
-      expiration_date_from: new Date().toISOString(),
-      expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      // Disable binary mode to get more detailed payment info
+      binary_mode: false,
     };
 
     console.log("Creating Mercado Pago preference:", JSON.stringify(preferenceData, null, 2));
