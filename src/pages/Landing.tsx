@@ -90,7 +90,7 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-24 md:pt-32 pb-16 md:pb-20 px-4">
         <div className="container mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -98,42 +98,120 @@ const Landing = () => {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            <Badge variant="secondary" className="mb-6">
+            <Badge variant="secondary" className="mb-4 md:mb-6">
               <Instagram className="w-3 h-3 mr-1" />
               Integração com Instagram
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 md:mb-6 leading-tight px-2">
               Suas DMs do Instagram,{" "}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 organizadas com IA
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Pare de perder oportunidades de parceria. Nossa IA classifica, prioriza e sugere respostas para suas mensagens diretas automaticamente.
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-2xl mx-auto px-2">
+              Pare de perder oportunidades de parceria. Nossa IA classifica, prioriza e sugere respostas para suas mensagens diretas.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate('/checkout')} className="text-lg px-8">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
+              <Button size="lg" onClick={() => navigate('/checkout')} className="text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
                 Começar Agora
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-              <Button size="lg" variant="outline" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Button size="lg" variant="outline" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="w-full sm:w-auto">
                 Ver Recursos
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-4">
               ✓ 7 dias grátis · ✓ Sem cartão de crédito · ✓ Cancele quando quiser
             </p>
           </motion.div>
 
-          {/* App Preview */}
+          {/* App Preview - Mobile optimized */}
           <motion.div 
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="mt-16 relative"
+            className="mt-12 md:mt-16 relative mx-auto max-w-5xl"
           >
             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 pointer-events-none" />
-            <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10 bg-card">
+            
+            {/* Mobile Phone Frame for mobile screens */}
+            <div className="block md:hidden">
+              <div className="relative mx-auto w-[280px] sm:w-[320px]">
+                {/* Phone frame */}
+                <div className="rounded-[2.5rem] bg-card border-4 border-muted p-2 shadow-2xl shadow-primary/20">
+                  {/* Phone notch */}
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-5 bg-muted rounded-full z-20" />
+                  
+                  {/* Screen content */}
+                  <div className="rounded-[2rem] overflow-hidden bg-background">
+                    {/* Status bar */}
+                    <div className="h-8 bg-sidebar flex items-center justify-between px-4 pt-2">
+                      <span className="text-xs text-muted-foreground">9:41</span>
+                      <div className="flex gap-1">
+                        <div className="w-4 h-2 bg-muted-foreground/50 rounded-sm" />
+                      </div>
+                    </div>
+                    
+                    {/* App header */}
+                    <div className="bg-sidebar p-3 border-b border-border flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                        <MessageSquare className="w-3.5 h-3.5 text-primary-foreground" />
+                      </div>
+                      <span className="font-semibold text-sm">DM Focus</span>
+                      <Badge className="ml-auto text-[10px] py-0">3 novas</Badge>
+                    </div>
+                    
+                    {/* Messages */}
+                    <div className="p-3 space-y-2.5">
+                      {/* Partnership Message */}
+                      <div className="p-3 rounded-xl border border-partnership/30 bg-partnership/5">
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-partnership to-partnership/60 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                              <span className="font-semibold text-sm">@marca</span>
+                              <Badge className="bg-partnership/20 text-partnership border-0 text-[10px] py-0 px-1.5">Parceria</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">Proposta de parceria exclusiva...</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Fan Message */}
+                      <div className="p-3 rounded-xl border border-fan/30 bg-fan/5">
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fan to-fan/60 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                              <span className="font-semibold text-sm">@fan123</span>
+                              <Badge className="bg-fan/20 text-fan border-0 text-[10px] py-0 px-1.5">Fã</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">Amo seu conteúdo!</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Question Message */}
+                      <div className="p-3 rounded-xl border border-question/30 bg-question/5">
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-question to-question/60 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                              <span className="font-semibold text-sm">@curioso</span>
+                              <Badge className="bg-question/20 text-question border-0 text-[10px] py-0 px-1.5">Pergunta</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">Qual câmera você usa?</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Preview */}
+            <div className="hidden md:block relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10 bg-card">
               {/* Mock Dashboard Preview */}
               <div className="bg-sidebar p-4 border-b border-border flex items-center gap-3">
                 <div className="flex gap-1.5">
@@ -149,7 +227,7 @@ const Landing = () => {
               </div>
               <div className="flex">
                 {/* Sidebar Preview */}
-                <div className="w-64 bg-sidebar border-r border-border p-4 hidden md:block">
+                <div className="w-64 bg-sidebar border-r border-border p-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 text-primary">
                       <MessageSquare className="w-5 h-5" />
@@ -219,18 +297,18 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 bg-muted/30">
+      <section id="features" className="py-12 md:py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 md:mb-16 px-2">
             <Badge variant="secondary" className="mb-4">Recursos</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
               Tudo que você precisa para dominar suas DMs
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Ferramentas inteligentes que transformam o caos das mensagens em oportunidades organizadas.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -255,14 +333,14 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
+      <section id="pricing" className="py-12 md:py-20 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 md:mb-16 px-2">
             <Badge variant="secondary" className="mb-4">Preços</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
               Simples e transparente
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Um plano único com tudo incluso. Sem surpresas, sem taxas escondidas.
             </p>
           </div>
@@ -271,7 +349,7 @@ const Landing = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="max-w-lg mx-auto"
+            className="max-w-lg mx-auto px-2"
           >
             <Card className="relative overflow-hidden border-primary/50 shadow-xl shadow-primary/10">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
@@ -320,15 +398,15 @@ const Landing = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4 bg-muted/30">
+      <section id="testimonials" className="py-12 md:py-20 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 md:mb-16 px-2">
             <Badge variant="secondary" className="mb-4">Depoimentos</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
               Creators que transformaram sua rotina
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 px-2">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.name}
@@ -357,17 +435,17 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
+      <section className="py-12 md:py-20 px-4">
+        <div className="container mx-auto px-2">
           <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
-            <CardContent className="p-12 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <CardContent className="p-6 sm:p-8 md:p-12 text-center">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                 Pronto para organizar suas DMs?
               </h2>
-              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-6 md:mb-8 max-w-xl mx-auto">
                 Junte-se a milhares de creators que já economizam horas por dia com o DM Focus.
               </p>
-              <Button size="lg" onClick={() => navigate('/checkout')} className="text-lg px-8">
+              <Button size="lg" onClick={() => navigate('/checkout')} className="text-base md:text-lg px-6 md:px-8 w-full sm:w-auto">
                 Começar Agora — É Grátis
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
