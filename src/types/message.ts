@@ -2,6 +2,8 @@ export type MessageIntent = 'partnership' | 'question' | 'fan' | 'hate' | 'spam'
 
 export type MessagePriority = 'high' | 'medium' | 'low';
 
+export type ClassificationStatus = 'pending' | 'processing' | 'classified' | 'skipped';
+
 export interface Message {
   id: string;
   author: {
@@ -19,4 +21,5 @@ export interface Message {
   isRead: boolean;
   suggestedReply?: string;
   isOpportunity?: boolean;
+  classificationStatus?: ClassificationStatus;
 }

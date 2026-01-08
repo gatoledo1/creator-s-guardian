@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Clock, ExternalLink, Sparkles } from 'lucide-react';
 import { Message, MessageIntent } from '@/types/message';
 import { Badge } from '@/components/ui/badge';
+import { ClassificationPendingBadge } from './ClassificationPendingBadge';
 import { cn } from '@/lib/utils';
 
 interface MessageCardProps {
@@ -31,6 +32,8 @@ function formatTimestamp(date: Date): string {
 }
 
 export function MessageCard({ message, isSelected, onSelect }: MessageCardProps) {
+  const isPendingClassification = message.classificationStatus === 'pending' || message.classificationStatus === 'processing';
+  
   return (
     <motion.button
       onClick={() => onSelect(message)}
@@ -75,21 +78,27 @@ export function MessageCard({ message, isSelected, onSelect }: MessageCardProps)
           </p>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant={message.intent}>
-              {intentLabels[message.intent]}
-            </Badge>
-            
-            {message.isOpportunity && (
-              <Badge variant="opportunity">
-                <Sparkles className="w-3 h-3 mr-1" />
-                Oportunidade
-              </Badge>
-            )}
+            {isPendingClassification ? (
+              <ClassificationPendingBadge status={message.classificationStatus!} />
+            ) : (
+              <>
+                <Badge variant={message.intent}>
+                  {intentLabels[message.intent]}
+                </Badge>
+                
+                {message.isOpportunity && (
+                  <Badge variant="opportunity">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Oportunidade
+                  </Badge>
+                )}
 
-            {message.priority === 'high' && message.intent !== 'hate' && message.intent !== 'spam' && (
-              <Badge variant="priority">
-                Prioridade
-              </Badge>
+                {message.priority === 'high' && message.intent !== 'hate' && message.intent !== 'spam' && (
+                  <Badge variant="priority">
+                    Prioridade
+                  </Badge>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Message, MessageIntent, MessagePriority } from '@/types/message';
 import { useWorkspace } from './useWorkspace';
 
+export type ClassificationStatus = 'pending' | 'processing' | 'classified' | 'skipped';
 
 export function useMessages() {
   const { workspace } = useWorkspace();
@@ -32,6 +33,7 @@ export function useMessages() {
           sender_followers_count,
           is_read,
           received_at,
+          classification_status,
           classifications (
             intent,
             priority,
@@ -55,6 +57,8 @@ export function useMessages() {
         const intent = (classification?.intent as MessageIntent) || 'question';
         const priority = classification?.priority === 'respond_now' ? 'high' 
           : classification?.priority === 'can_wait' ? 'medium' : 'low';
+        
+        const classificationStatus = (msg.classification_status || 'pending') as ClassificationStatus;
 
         return {
           id: msg.id,
@@ -72,6 +76,7 @@ export function useMessages() {
           isRead: msg.is_read ?? false,
           suggestedReply: classification?.suggested_reply || undefined,
           isOpportunity: intent === 'partnership' || priority === 'high',
+          classificationStatus,
         };
       });
 

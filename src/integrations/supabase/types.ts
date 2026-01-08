@@ -54,7 +54,9 @@ export type Database = {
       }
       messages: {
         Row: {
+          classification_status: string
           content: string
+          conversation_id: string | null
           created_at: string
           id: string
           instagram_message_id: string | null
@@ -68,7 +70,9 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          classification_status?: string
           content: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           instagram_message_id?: string | null
@@ -82,7 +86,9 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          classification_status?: string
           content?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           instagram_message_id?: string | null
@@ -136,6 +142,48 @@ export type Database = {
           instagram_access_token?: string | null
           instagram_id?: string | null
           instagram_username?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          blocked_at: string | null
+          created_at: string
+          expires_at: string
+          grace_period_until: string | null
+          id: string
+          marked_for_deletion_at: string | null
+          mercadopago_subscription_id: string | null
+          plan: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          created_at?: string
+          expires_at: string
+          grace_period_until?: string | null
+          id?: string
+          marked_for_deletion_at?: string | null
+          mercadopago_subscription_id?: string | null
+          plan?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocked_at?: string | null
+          created_at?: string
+          expires_at?: string
+          grace_period_until?: string | null
+          id?: string
+          marked_for_deletion_at?: string | null
+          mercadopago_subscription_id?: string | null
+          plan?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
           user_id?: string
         }
@@ -206,6 +254,11 @@ export type Database = {
       app_role: "admin" | "user"
       message_intent: "partnership" | "fan" | "question" | "hate" | "spam"
       message_priority: "respond_now" | "can_wait" | "ignore"
+      subscription_status:
+        | "active"
+        | "grace_period"
+        | "blocked"
+        | "pending_deletion"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -336,6 +389,12 @@ export const Constants = {
       app_role: ["admin", "user"],
       message_intent: ["partnership", "fan", "question", "hate", "spam"],
       message_priority: ["respond_now", "can_wait", "ignore"],
+      subscription_status: [
+        "active",
+        "grace_period",
+        "blocked",
+        "pending_deletion",
+      ],
     },
   },
 } as const
