@@ -63,26 +63,28 @@ serve(async (req: Request) => {
       if (status === "approved" && userId) {
         console.log(`Payment approved for user ${userId}`);
 
+        // Calculate expiration date (30 days from now)
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
         // Update user subscription in database
-        // First check if subscriptions table exists, if not we'll create it via migration
         const { error: updateError } = await supabase
           .from("subscriptions")
           .upsert({
             user_id: userId,
             status: "active",
-            payment_id: String(payment.id),
-            payment_method: payment.payment_type_id,
-            amount: payment.transaction_amount,
-            currency: payment.currency_id,
-            started_at: new Date().toISOString(),
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days for monthly
+            plan: "monthly",
+            expires_at: expiresAt.toISOString(),
+            grace_period_until: null,
+            blocked_at: null,
+            marked_for_deletion_at: null,
+            mercadopago_subscription_id: String(payment.id),
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id" });
 
         if (updateError) {
           console.error("Error updating subscription:", updateError);
         } else {
-          console.log("Subscription updated successfully");
+          console.log("Subscription updated successfully, expires at:", expiresAt.toISOString());
         }
       }
     }

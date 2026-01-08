@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Menu, Instagram, Loader2, MessageCircle } from 'lucide-react';
+import { Search, Menu, Instagram, Loader2, MessageCircle, ShieldX } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MessageCard } from './MessageCard';
@@ -9,11 +9,13 @@ import { MessageDetail } from './MessageDetail';
 import { MobileMessageDetail } from './MobileMessageDetail';
 import { StatsHeader } from './StatsHeader';
 import { MobileStatsHeader } from './MobileStatsHeader';
+import { SubscriptionBanner } from './SubscriptionBanner';
 import { Message, MessageIntent } from '@/types/message';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useMessages } from '@/hooks/useMessages';
+import { useSubscription } from '@/hooks/useSubscription';
 
 type FilterType = MessageIntent | 'all' | 'opportunities';
 
@@ -21,6 +23,7 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { isConnected, loading: workspaceLoading } = useWorkspace();
   const { messages, loading: messagesLoading, counts, stats } = useMessages();
+  const { isBlocked, loading: subscriptionLoading } = useSubscription();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,10 +52,43 @@ export function Dashboard() {
   }, [messages, activeFilter, searchQuery]);
 
   // Loading state
-  if (workspaceLoading) {
+  if (workspaceLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Blocked subscription
+  if (isBlocked) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-20 h-20 bg-destructive/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <ShieldX className="w-10 h-10 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Acesso Bloqueado
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            Sua assinatura expirou e o período de carência terminou. Renove para recuperar o acesso às suas mensagens.
+          </p>
+          <Button
+            onClick={() => navigate('/checkout')}
+            size="lg"
+            variant="destructive"
+          >
+            Reativar Conta
+          </Button>
+          <p className="text-xs text-muted-foreground mt-4">
+            Sua conta será permanentemente excluída em 30 dias se não for reativada.
+          </p>
+        </motion.div>
       </div>
     );
   }
@@ -102,7 +138,8 @@ export function Dashboard() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         {/* Mobile Header */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border p-4">
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border p-4 space-y-3">
+          <SubscriptionBanner />
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <Button 
@@ -192,8 +229,9 @@ export function Dashboard() {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="p-6 border-b border-border">
-          <div className="flex items-center justify-between mb-6">
+        <header className="p-6 border-b border-border space-y-4">
+          <SubscriptionBanner />
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">Inbox</h1>
               <p className="text-sm text-muted-foreground">
