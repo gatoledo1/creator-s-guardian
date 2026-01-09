@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Inbox, 
   Sparkles, 
@@ -15,6 +16,7 @@ import {
 import { MessageIntent } from '@/types/message';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -35,9 +37,22 @@ const filters = [
 ];
 
 export function MobileSidebar({ isOpen, onClose, activeFilter, onFilterChange, counts }: MobileSidebarProps) {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
   const handleFilterChange = (filter: MessageIntent | 'all' | 'opportunities') => {
     onFilterChange(filter);
     onClose();
+  };
+
+  const handleSettingsClick = () => {
+    onClose();
+    navigate('/settings');
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth');
   };
 
   return (
@@ -131,9 +146,18 @@ export function MobileSidebar({ isOpen, onClose, activeFilter, onFilterChange, c
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors">
+                <button 
+                  onClick={handleSettingsClick}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors"
+                >
                   <Settings className="w-4 h-4" />
                   <span>Configurações</span>
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             </div>

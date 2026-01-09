@@ -14,6 +14,7 @@ import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutPending from "./pages/CheckoutPending";
 import CheckoutFailure from "./pages/CheckoutFailure";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/checkout/pending" element={<CheckoutPending />} />
             <Route path="/checkout/failure" element={<CheckoutFailure />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

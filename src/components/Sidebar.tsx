@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Inbox, 
   Sparkles, 
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { MessageIntent } from '@/types/message';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   activeFilter: MessageIntent | 'all' | 'opportunities';
@@ -31,6 +33,14 @@ const filters = [
 ];
 
 export function Sidebar({ activeFilter, onFilterChange, counts }: SidebarProps) {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   return (
     <aside className="w-64 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
@@ -100,10 +110,16 @@ export function Sidebar({ activeFilter, onFilterChange, counts }: SidebarProps) 
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors">
+          <button 
+            onClick={() => navigate('/settings')}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors"
+          >
             <Settings className="w-4 h-4" />
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors">
+          <button 
+            onClick={handleLogout}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 transition-colors"
+          >
             <LogOut className="w-4 h-4" />
           </button>
         </div>

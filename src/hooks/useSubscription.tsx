@@ -11,12 +11,14 @@ interface Subscription {
   grace_period_until: string | null;
   blocked_at: string | null;
   plan: string;
+  mercadopago_subscription_id: string | null;
 }
 
 interface UseSubscriptionReturn {
   subscription: Subscription | null;
   status: SubscriptionStatus;
   loading: boolean;
+  isLoading: boolean;
   daysRemaining: number | null;
   graceDaysRemaining: number | null;
   isReadOnly: boolean;
@@ -71,6 +73,7 @@ export function useSubscription(): UseSubscriptionReturn {
     subscription,
     status,
     loading,
+    isLoading: loading,
     daysRemaining,
     graceDaysRemaining,
     isReadOnly,
