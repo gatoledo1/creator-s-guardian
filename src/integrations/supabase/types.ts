@@ -52,6 +52,39 @@ export type Database = {
           },
         ]
       }
+      data_access_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           classification_status: string
@@ -115,33 +148,45 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          data_retention_days: number | null
           display_name: string | null
           id: string
           instagram_access_token: string | null
           instagram_id: string | null
+          instagram_token_encrypted: boolean | null
           instagram_username: string | null
+          lgpd_consent_at: string | null
+          lgpd_consent_version: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          data_retention_days?: number | null
           display_name?: string | null
           id?: string
           instagram_access_token?: string | null
           instagram_id?: string | null
+          instagram_token_encrypted?: boolean | null
           instagram_username?: string | null
+          lgpd_consent_at?: string | null
+          lgpd_consent_version?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          data_retention_days?: number | null
           display_name?: string | null
           id?: string
           instagram_access_token?: string | null
           instagram_id?: string | null
+          instagram_token_encrypted?: boolean | null
           instagram_username?: string | null
+          lgpd_consent_at?: string | null
+          lgpd_consent_version?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -239,9 +284,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_data_export: {
+        Row: {
+          data_retention_days: number | null
+          display_name: string | null
+          instagram_username: string | null
+          lgpd_consent_at: string | null
+          profile_created_at: string | null
+          total_messages: number | null
+          user_id: string | null
+          workspace_created_at: string | null
+          workspace_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_encryption_key: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
