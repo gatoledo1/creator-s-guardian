@@ -291,7 +291,6 @@ export type Database = {
           instagram_username: string | null
           lgpd_consent_at: string | null
           profile_created_at: string | null
-          total_messages: number | null
           user_id: string | null
           workspace_created_at: string | null
           workspace_name: string | null
