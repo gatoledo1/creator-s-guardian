@@ -300,7 +300,6 @@ export type Database = {
       }
     }
     Functions: {
-      get_encryption_key: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
