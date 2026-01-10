@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encodeHex, decodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,55 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const INSTAGRAM_APP_ID = Deno.env.get('INSTAGRAM_APP_ID')!;
 const INSTAGRAM_APP_SECRET = Deno.env.get('INSTAGRAM_APP_SECRET')!;
+const ENCRYPTION_KEY = Deno.env.get('ENCRYPTION_KEY')!;
+
+// AES-256-GCM encryption functions
+async function getEncryptionKey(): Promise<CryptoKey> {
+  const keyBytes = decodeHex(ENCRYPTION_KEY);
+  return await crypto.subtle.importKey(
+    'raw',
+    new Uint8Array(keyBytes).buffer as ArrayBuffer,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptToken(plaintext: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for GCM
+  const encodedText = new TextEncoder().encode(plaintext);
+  
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encodedText
+  );
+  
+  // Combine IV + ciphertext and encode as hex
+  const combined = new Uint8Array(iv.length + new Uint8Array(ciphertext).length);
+  combined.set(iv);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+  
+  return encodeHex(combined);
+}
+
+async function decryptToken(encryptedHex: string): Promise<string> {
+  const key = await getEncryptionKey();
+  const combined = decodeHex(encryptedHex);
+  
+  // Extract IV (first 12 bytes) and ciphertext (rest)
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext
+  );
+  
+  return new TextDecoder().decode(decrypted);
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -144,13 +194,18 @@ serve(async (req) => {
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-      // Update profile with Instagram data
+      // Encrypt the access token before storing
+      const encryptedToken = await encryptToken(accessToken);
+      console.log('Token encrypted successfully');
+
+      // Update profile with Instagram data (encrypted token)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           instagram_id: igId,
           instagram_username: igUsername,
-          instagram_access_token: accessToken,
+          instagram_access_token: encryptedToken,
+          instagram_token_encrypted: true,
         })
         .eq('user_id', user_id);
 
