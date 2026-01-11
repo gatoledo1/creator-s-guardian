@@ -22,7 +22,7 @@ type FilterType = MessageIntent | 'all' | 'opportunities';
 export function Dashboard() {
   const navigate = useNavigate();
   const { isConnected, loading: workspaceLoading } = useWorkspace();
-  const { messages, loading: messagesLoading, counts, stats } = useMessages();
+  const { messages, loading: messagesLoading, counts, stats, sendReply, sendingReply } = useMessages();
   const { isBlocked, loading: subscriptionLoading } = useSubscription();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -212,6 +212,8 @@ export function Dashboard() {
           <MobileMessageDetail
             message={selectedMessage}
             onClose={() => setSelectedMessage(null)}
+            onSendReply={sendReply}
+            sendingReply={sendingReply}
           />
         )}
       </div>
@@ -286,6 +288,8 @@ export function Dashboard() {
           <MessageDetail 
             message={selectedMessage} 
             onClose={() => setSelectedMessage(null)}
+            onSendReply={sendReply}
+            sendingReply={sendingReply}
           />
         </div>
       </main>
