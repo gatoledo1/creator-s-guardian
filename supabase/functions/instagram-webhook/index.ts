@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,88 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const INSTAGRAM_VERIFY_TOKEN = Deno.env.get('IG_VERIFY_TOKEN')!;
+const ENCRYPTION_KEY = Deno.env.get('ENCRYPTION_KEY')!;
+
+// AES-256-GCM decryption function
+async function decryptToken(encryptedHex: string): Promise<string> {
+  const keyBytes = decodeHex(ENCRYPTION_KEY);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new Uint8Array(keyBytes).buffer as ArrayBuffer,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  
+  const combined = decodeHex(encryptedHex);
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext
+  );
+  
+  return new TextDecoder().decode(decrypted);
+}
+
+// Fetch Instagram user profile using the API
+async function fetchInstagramProfile(userId: string, accessToken: string): Promise<{
+  username?: string;
+  name?: string;
+  profile_picture_url?: string;
+  followers_count?: number;
+} | null> {
+  try {
+    const response = await fetch(
+      `https://graph.instagram.com/v24.0/${userId}?fields=username,name,profile_picture_url,followers_count&access_token=${encodeURIComponent(accessToken)}`
+    );
+    
+    if (!response.ok) {
+      console.error('Failed to fetch Instagram profile:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log('Fetched profile for sender:', userId, data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching Instagram profile:', error);
+    return null;
+  }
+}
+
+// Get decrypted access token for workspace owner
+async function getAccessTokenForWorkspace(supabase: any, workspaceId: string): Promise<string | null> {
+  try {
+    const { data: workspace } = await supabase
+      .from('workspaces')
+      .select('owner_id')
+      .eq('id', workspaceId)
+      .single();
+    
+    if (!workspace) return null;
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('instagram_access_token, instagram_token_encrypted')
+      .eq('user_id', workspace.owner_id)
+      .single();
+    
+    if (!profile?.instagram_access_token) return null;
+    
+    // Decrypt token if encrypted
+    if (profile.instagram_token_encrypted) {
+      return await decryptToken(profile.instagram_access_token);
+    }
+    
+    return profile.instagram_access_token;
+  } catch (error) {
+    console.error('Error getting access token:', error);
+    return null;
+  }
+}
 
 serve(async (req) => {
   // Handle webhook verification (GET request from Meta)
@@ -89,7 +172,17 @@ serve(async (req) => {
 
             console.log('Processing incoming message from:', senderId, 'content:', messageData.text?.substring(0, 50));
 
-            // Insert the message
+            // Get access token to fetch sender profile
+            const accessToken = await getAccessTokenForWorkspace(supabase, workspace.id);
+            let senderProfile = null;
+            
+            if (accessToken) {
+              senderProfile = await fetchInstagramProfile(senderId, accessToken);
+            } else {
+              console.log('No access token available, skipping profile fetch');
+            }
+
+            // Insert the message with sender profile data
             const { data: insertedMsg, error: insertError } = await supabase
               .from('messages')
               .insert({
@@ -98,6 +191,10 @@ serve(async (req) => {
                 sender_instagram_id: senderId,
                 content: messageData.text || '[Mídia]',
                 received_at: new Date(event.timestamp).toISOString(),
+                sender_username: senderProfile?.username || null,
+                sender_name: senderProfile?.name || null,
+                sender_avatar_url: senderProfile?.profile_picture_url || null,
+                sender_followers_count: senderProfile?.followers_count || null,
               })
               .select()
               .single();
