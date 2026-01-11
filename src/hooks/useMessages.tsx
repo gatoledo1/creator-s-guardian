@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, MessageIntent, MessagePriority } from '@/types/message';
 import { useWorkspace } from './useWorkspace';
+import { toast } from 'sonner';
 
 export type ClassificationStatus = 'pending' | 'processing' | 'classified' | 'skipped';
 
@@ -10,6 +11,7 @@ export function useMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     if (!workspace?.id) {
@@ -31,6 +33,7 @@ export function useMessages() {
           sender_username,
           sender_avatar_url,
           sender_followers_count,
+          sender_instagram_id,
           is_read,
           received_at,
           classification_status,
@@ -62,6 +65,7 @@ export function useMessages() {
 
         return {
           id: msg.id,
+          senderInstagramId: msg.sender_instagram_id,
           author: {
             name: msg.sender_name || 'Usuário Instagram',
             username: msg.sender_username || 'instagram_user',
@@ -152,5 +156,54 @@ export function useMessages() {
     }
   };
 
-  return { messages, loading, error, counts, stats, markAsRead };
+  const sendReply = useCallback(async (recipientId: string, message: string, messageId?: string) => {
+    if (!message.trim()) {
+      toast.error('Digite uma mensagem para enviar');
+      return false;
+    }
+
+    setSendingReply(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Você precisa estar logado');
+        return false;
+      }
+
+      const response = await supabase.functions.invoke('send-instagram-message', {
+        body: { recipientId, message, messageId },
+      });
+
+      if (response.error) {
+        console.error('Send reply error:', response.error);
+        toast.error(response.error.message || 'Falha ao enviar mensagem');
+        return false;
+      }
+
+      if (response.data?.error) {
+        console.error('API error:', response.data.error);
+        toast.error(response.data.error);
+        return false;
+      }
+
+      toast.success('Mensagem enviada com sucesso!');
+      
+      // Mark as read locally
+      if (messageId) {
+        setMessages(prev => prev.map(m => 
+          m.id === messageId ? { ...m, isRead: true } : m
+        ));
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Send reply error:', err);
+      toast.error('Erro ao enviar mensagem');
+      return false;
+    } finally {
+      setSendingReply(false);
+    }
+  }, []);
+
+  return { messages, loading, error, counts, stats, markAsRead, sendReply, sendingReply };
 }

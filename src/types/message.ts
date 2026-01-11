@@ -6,6 +6,7 @@ export type ClassificationStatus = 'pending' | 'processing' | 'classified' | 'sk
 
 export interface Message {
   id: string;
+  senderInstagramId?: string;
   author: {
     name: string;
     username: string;

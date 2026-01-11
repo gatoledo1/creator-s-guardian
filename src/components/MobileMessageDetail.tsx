@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, ExternalLink, Clock, Users, Sparkles, X, Send, ArrowLeft } from 'lucide-react';
+import { Copy, Check, ExternalLink, Clock, Users, Sparkles, X, Send, ArrowLeft, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Message, MessageIntent } from '@/types/message';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 interface MobileMessageDetailProps {
   message: Message | null;
   onClose: () => void;
+  onSendReply?: (recipientId: string, message: string, messageId: string) => Promise<boolean>;
+  sendingReply?: boolean;
 }
 
 const intentLabels: Record<MessageIntent, string> = {
@@ -35,7 +37,7 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
-export function MobileMessageDetail({ message, onClose }: MobileMessageDetailProps) {
+export function MobileMessageDetail({ message, onClose, onSendReply, sendingReply }: MobileMessageDetailProps) {
   const [copied, setCopied] = useState(false);
   const [reply, setReply] = useState('');
 
@@ -54,6 +56,17 @@ export function MobileMessageDetail({ message, onClose }: MobileMessageDetailPro
       setReply(message.suggestedReply);
     }
   };
+
+  const handleSendReply = async () => {
+    if (!reply.trim() || !message.senderInstagramId || !onSendReply) return;
+    
+    const success = await onSendReply(message.senderInstagramId, reply, message.id);
+    if (success) {
+      setReply('');
+    }
+  };
+
+  const canSendReply = !!message.senderInstagramId && !!onSendReply;
 
   return (
     <AnimatePresence>
@@ -164,14 +177,30 @@ export function MobileMessageDetail({ message, onClose }: MobileMessageDetailPro
             <textarea
               value={reply}
               onChange={(e) => setReply(e.target.value)}
-              placeholder="Digite sua resposta..."
-              className="flex-1 px-4 py-3 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+              placeholder={canSendReply ? "Digite sua resposta..." : "Conecte o Instagram para responder"}
+              disabled={!canSendReply || sendingReply}
+              className="flex-1 px-4 py-3 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm disabled:opacity-50"
               rows={2}
             />
-            <Button variant="glow" size="icon" className="h-auto aspect-square self-end">
-              <Send className="w-4 h-4" />
+            <Button 
+              variant="glow" 
+              size="icon" 
+              className="h-auto aspect-square self-end"
+              onClick={handleSendReply}
+              disabled={!reply.trim() || !canSendReply || sendingReply}
+            >
+              {sendingReply ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </Button>
           </div>
+          {!canSendReply && (
+            <p className="text-xs text-muted-foreground mt-2">
+              O ID do remetente não está disponível para esta mensagem.
+            </p>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>
